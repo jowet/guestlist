@@ -1,0 +1,189 @@
+<head>
+  <title>Guestlist App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+
+<template name="bootstrapWrapper">
+  <div class="container">
+    <div class="navbar navbar-default" role="navigation">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/">Guestlist App{{#if company}}: {{ company.name }}{{/if}}</a>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                {{> loginButtons }}
+            </ul>
+        </div>
+    </div>
+    {{#if currentUser}}
+      {{> yield}}
+    {{else}}
+      <h1>Please log in!</h1>
+    {{/if}}
+  </div>
+</template>
+
+<template name="dashboard">
+  {{#if company}}
+  <div class="row">
+    <div class="col-md-6">{{> eventList }}</div>
+    <div class="col-md-6">
+      {{#if showEventDetails }}
+        {{> eventDetails }}
+      {{/if}}      
+      {{> editEvent }}
+      {{#if distributingCodes }}
+        {{> distributeCodes }}
+      {{/if}}
+    </div>
+  </div>
+  {{else}}
+    {{> setCompanyName}}
+  {{/if}}
+</template>
+
+<template name="setCompanyName">
+  <h1>Welcome to Guestlist App!</h1>
+  <p>To setup your account, please provide the name of your company/venue:</p>
+  <p class="form-inline"><input id="companyName" class="form-control" type="text" /> <button id="setCompanyName" class="btn btn-default">Continue</button></p>
+  <p>This name should be the name that you are publicly recogised by, not necessarily you official company name.</p>
+</template>
+
+<template name="checkpoint">
+  <h1>{{ selectedEvent.name }} ({{ formatDateShort selectedEvent.date}})</h1>
+  <p class="hidden-print">
+    <div class="btn-group" data-toggle="buttons">
+      <label class="btn btn-default btn-xs {{#if $.Session.equals 'checkpoint_mode' 'grouped'}}active{{/if}}">
+        <input type="radio" name="mode" value="grouped"> grouped
+      </label>
+      <label class="btn btn-default btn-xs {{#if $.Session.equals 'checkpoint_mode' 'ungrouped'}}active{{/if}}">
+        <input type="radio" name="mode" value="ungrouped"> ungrouped
+      </label>
+    </div>
+  </p>
+  {{#if $.Session.equals 'checkpoint_mode' 'grouped'}}
+    {{#each alphabeticalInviters }}
+      <h2>{{ inviterName this }}</h2>
+        <ul class="codeList">
+        {{#each alphabeticalCodes this }}
+          {{> codeListEntry}}
+        {{/each}}
+        </ul>
+    {{/each}}
+  {{else}}
+    <ul class="codeList">
+      {{#each alphabeticalCodes }}
+        {{> codeListEntry}}
+      {{/each}}
+    </ul>
+  {{/if}}
+</template>
+
+<template name="codeListEntry">
+  <li>
+    <span class="{{#if usedAt}}code-used{{/if}}">
+      <span>{{ code }}</span>
+      {{#if showInvitedBy }}
+        <span class="code-for"><span class="hidden-print">invited by </span>{{inviterName inviterId}}</span>
+      {{/if}}
+    </span>
+    <div class="dropdown hidden-print">
+      <button class="btn btn-default btn-xs" data-toggle="dropdown"><span class="caret"></span></button>
+      <ul class="dropdown-menu">
+        {{#if usedAt}}
+          <li role="presentation"><a class="reactivate" href="#">reactivate</a></li>
+        {{/if}}
+        <li role="presentation"><a class="remove" href="#">remove completly</a></li>
+      </ul>
+    </div>
+  </li>
+</template>
+
+<template name="eventList">
+  <h2>Events</h2>
+  <ul id="eventList">
+  {{#each list }}
+    <li><strong>{{ formatDate date }}</strong>: {{ name }}</li>
+  {{/each}}
+  </ul>
+  {{#unless editingEvent}}
+    <button id="addEvent" class="btn btn-default">Add event</button>
+  {{/unless}}
+</template>
+
+<template name="editEvent">
+  {{#if editingEvent}}
+    <h1>{{#if existing}}Edit event{{else}}Create new event{{/if}}</h1>
+    <form role="form" autocomplete="off">
+      <div class="form-group">
+        <label for="eventName">Event name</label>
+        <input id="eventName" class="form-control" type="text" value="{{ selectedEvent.name }}" required="required" />
+      </div>
+      <div class="form-group">
+        <label for="eventDate">Event date</label>
+        <input id="eventDate" class="form-control" type="date" value="{{ html5date selectedEvent.date }}" required="required" />
+      </div>
+      <div class="form-group">
+        <button class="btn btn-default" id="saveEvent">Save</button>{{#if existing}} <button id="deleteEvent" class="btn btn-default">Delete</button>{{/if}}
+      </div>
+    </form>
+  {{/if}}
+</template>
+
+<template name="distributeCodes">
+  <h1>Distribute</h1>
+  <form role="form" id="distributeForm" autocomplete="off">
+    {{#each inviters }}
+        <div class="form-group">
+          <div class="checkbox">
+            <label class="{{#if $gt newCount 0}}hasNewCodes{{/if}}"><input type="checkbox"> {{ inviter.name }} ({{#if $eq totalCount newCount}}{{newCount}} new codes{{else}}{{totalCount}} codes, {{newCount}} new{{/if}})</label>
+          </div>
+          <input class="form-control" type="email" data-inviterid="{{ inviter._id }}" value="{{ inviter.email }}" />
+        </div>
+    {{/each}}
+    <div class="form-group">
+      <button class="btn btn-default" id="sendCodes">Send</button>
+    </div>
+  </form>
+</template>
+
+
+<template name="eventDetails">
+  <h2>{{ selectedEvent.name }}</h2>
+  <p>Stats: {{ numcodes }} invite(s) for {{ numinviters }} inviter(s).{{#if numnobody}} {{numnobody}} forehanded invite(s).{{/if}}{{#if numused}} {{numused}} used.{{/if}}</p>
+  <form role="form" autocomplete="off">
+    <div class="form-group form-inline">
+      <div class="form-group-narrow">
+        For {{> inviterSelect }}
+      </div>
+      <div class="form-group-narrow">
+        <ul>
+            <li class="form-group-narrow">generate <input id="numNewCodes" class="form-control" type="number" min="1" max="99" style="width: 70px" /> codes from {{> corpusSelect}} <button id="generateCodes" class="btn btn-default">Go!</button></li>
+            <li class="form-group-narrow">add <textarea id="addNameTxt" class="form-control" rows="1"></textarea> <button id="addName" class="btn btn-default">Go!</button></li>
+        </ul>
+      </div>
+    </div>
+    <div class="form-group">
+      <button id="editEvent" class="btn btn-default{{#if editingEvent}} active{{/if}}">Edit event</button> <button id="distribute" class="btn btn-default{{#if distributingCodes}} active{{/if}}{{#if $eq numcodes 0}} disabled{{/if}}">Distribute codes </button> <a href="{{pathFor 'checkpoint' _id=selectedEvent._id }}" class="btn btn-default">Show list of codes</a>
+    </div>
+  </form>
+</template>
+
+<template name="corpusSelect">
+  <select id="corpusSelect" class="form-control" style="width: 180px">
+    {{#each list}}
+      <option value="{{ key }}">{{ value }}</option>
+    {{/each}}
+  </select>
+</template>
+
+<template name="inviterSelect">
+  <input id="inviterSelect" type="text" style="width: 200px" />
+</template>

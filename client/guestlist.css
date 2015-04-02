@@ -1,0 +1,52 @@
+#eventList li, .codeList li {
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.codeList .dropdown {
+  display: inline-block;
+}
+
+.codeList .dropdown>button {
+  margin-left: 5px
+}
+
+.form-group-narrow {
+  margin-bottom: 5px;
+}
+
+.code-used {
+  text-decoration: line-through;
+}
+
+.code-for {
+  color: lightgray;
+}
+
+.codeList li {
+  height: 22px;
+}
+
+.codeList li button {
+  line-height: 11px;
+  margin-bottom: 4px;
+}
+
+.codeList li .dropdown-menu {
+  margin-top: -2px;
+}
+
+label.hasNewCodes {
+  font-weight: bold;
+}
+
+@media print {
+  .code-for {
+    float: right;
+  }
+}
